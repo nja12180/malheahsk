@@ -68,6 +68,7 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -uo pipefail
           num=$(gh issue list --state open --search 'Supabase keepalive 실패 in:title' --json number --jq '.[0].number // empty' 2>/dev/null || true)
@@ -80,6 +81,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
           WEBHOOK_STYLE: ${{ vars.ALERT_WEBHOOK_STYLE }}
         run: |
@@ -90,9 +92,9 @@ jobs:
           # 1) GitHub 이슈: 열린 이슈가 있으면 코멘트, 없으면 생성
           num=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty' 2>/dev/null || true)
           if [ -n "${num:-}" ]; then
-            gh issue comment "$num" --body "$MSG" || echo "이슈 코멘트 실패 (issues 비활성?)"
+            gh issue comment "$num" --body "$MSG" || echo "::warning::이슈 코멘트 실패"
           else
-            gh issue create --title "$TITLE" --body "$MSG" || echo "이슈 생성 실패 (issues 비활성?)"
+            gh issue create --title "$TITLE" --body "$MSG" || echo "::warning::이슈 생성 실패 — Settings > General > Features 에서 Issues 가 켜져 있는지, 워크플로 permissions 에 issues: write 가 있는지 확인하세요."
           fi
 
           # 2) (선택) Slack / Discord 웹훅 — 시크릿 ALERT_WEBHOOK_URL 이 있을 때만
